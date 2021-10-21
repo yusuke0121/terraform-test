@@ -1,3 +1,5 @@
+variable "instance_type" {}
+
 #　vpc作成
 resource "aws_vpc" "tfvpc" {
   cidr_block           = "10.0.0.0/16"
@@ -89,7 +91,7 @@ resource "aws_security_group_rule" "out_all" {
   from_port         = 0
   to_port           = 0
   cidr_blocks       = ["0.0.0.0/0"]
-
+}
 # keypair
 resource "aws_key_pair" "example1" {
   key_name = "example1"
@@ -101,11 +103,22 @@ resource "aws_instance" "tfinstance" {
   ami                         = "ami-00d101850e971728d"
   vpc_security_group_ids      = [aws_security_group.tfsg.id]
   subnet_id                   = aws_subnet.tfsubnet.id
-  instance_type               = "t2.micro"
+  instance_type               = var.instance_type
   associate_public_ip_address = true
   key_name                    = aws_key_pair.example1.id
+  user_data                   = <<EOF
+    #!/bin/bash
+    yum install -y httpd
+    systemctl start httpd.service
+  EOF  
 
   tags = {
     Name = "tfinstance"
   }
+}
+
+
+output "public_dns" {
+  value = aws_instance.tfinstance.public_dns
+  
 }
